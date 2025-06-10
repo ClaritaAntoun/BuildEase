@@ -1,0 +1,167 @@
+
+<!-- Clarita Antoun -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Generate Your Home Design with AI</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #141e30, #243b55);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      text-align: center;
+      padding: 50px;
+    }
+
+    h2 {
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
+
+    textarea {
+      width: 60%;
+      height: 100px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      resize: none;
+      outline: none;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 30px;
+      font-size: 18px;
+      background-color: #00c3ff;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #00a3cc;
+    }
+
+    #result img {
+      margin-top: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="header" id="header">
+    <header class="header-area">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-3 text-left">
+            <div class="header-left">
+              <a href="#"><i class="fab fa-facebook-f"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+          </div>
+          <div class="col-md-9 text-right">
+            <div class="header-right">
+              <ul class="list-inline mb-0">
+                <li class="list-inline-item"><i class="fas fa-map-marker-alt"></i> Lebanon</li>
+                <li class="list-inline-item"><i class="fas fa-mobile-alt"></i> <a href="#">+961 81 111 000</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="navigation">
+      <div class="container">
+        <nav class="navbar navbar-expand-lg">
+          <a class="navbar-brand" href="index.php">
+            <div class="logo">Build<span>Ease</span></div>
+          </a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+            <li class="nav-item active"><a class="nav-link" href="homeOwnerPage.php">Go To Dashboard</a></li>
+              <li class="nav-item active"><a class="nav-link" href="index.php">Home</a></li>
+              
+
+              <li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <?php echo isset($_SESSION['homeOwner_identity']['fullName']) ? $_SESSION['homeOwner_identity']['fullName'] : 'Profile'; ?>
+  </a>
+  <ul class="dropdown-menu" aria-labelledby="userDropdown">
+      <li><a class="dropdown-item" href="profile.php">Profile</a></li>
+      <li><a class="dropdown-item" href="logOut.php">Sign Out</a></li>
+  </ul>
+</li>
+
+
+
+            
+             
+            </ul>
+          </div>
+        </nav>
+      </div>
+    </nav>
+  </div>
+  <h2>Describe your dream house:</h2>
+  <textarea id="prompt" placeholder="e.g., A futuristic glass house on a mountain"></textarea>
+  <br>
+  <button onclick="generateImage()">Generate</button>
+  <div id="result"></div>
+
+  <script>
+    async function generateImage() {
+      const prompt = document.getElementById('prompt').value;
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = 'Generating...';
+
+      try {
+        const response = await fetch("https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer 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",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ inputs: prompt })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || `HTTP ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const imageUrl = URL.createObjectURL(blob);
+
+        resultDiv.innerHTML = `<img src="${imageUrl}" width="512">`;
+
+        // SEND the image to your server for saving
+        const formData = new FormData();
+        formData.append('image', blob);
+        formData.append('prompt', prompt);
+
+        const uploadResponse = await fetch("save_image.php", {
+          method: "POST",
+          body: formData
+        });
+
+        const uploadResult = await uploadResponse.text();
+        console.log("Saved to project table:", uploadResult);
+
+      } catch (error) {
+        resultDiv.innerHTML = `<span style="color:red;">Error: ${error.message}</span>`;
+        console.error("Generation failed:", error);
+      }
+    }
+  </script>
+</body>
+</html>
